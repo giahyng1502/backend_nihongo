@@ -37,12 +37,12 @@ const remindController = {
       const end = new Date(
         start.getTime() + (durationInDays || 1) * 24 * 60 * 60 * 1000
       );
-
+      let remindMinutes = remindInterval === 0 ? 1 : remindInterval; // mặc định 1 phút
       const record = await User.findOneAndUpdate(
         { tokenId },
         {
           startedTime: start,
-          remindInterval,
+          remindInterval: remindMinutes,
           durationInDays,
           endTime: end,
           enabled: true,
@@ -60,6 +60,29 @@ const remindController = {
     } catch (err) {
       console.log(err);
 
+      return res.status(500).json({ error: err.message });
+    }
+  },
+
+  turnOffRemind: async (req, res) => {
+    try {
+      const tokenId = req.body.tokenId;
+
+      if (!tokenId) {
+        return res.status(400).json({ error: "tokenId is required" });
+      }
+      const deleted = await User.findOneAndDelete({ tokenId });
+      console.log("🗑️ Deleted:", deleted);
+
+      if (!deleted) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      return res.status(200).json({
+        success: true,
+        message: "Remind turned off and user data deleted",
+      });
+    } catch (err) {
+      console.log(err);
       return res.status(500).json({ error: err.message });
     }
   },
